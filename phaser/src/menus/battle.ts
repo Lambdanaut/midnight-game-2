@@ -132,6 +132,18 @@ export class ActiveBattle extends Phaser.Scene {
         this.player.hp = Math.max(0, this.player.maxHp - playerDamage);
         this.player.hpBar.setValue(this.player.hp);
 
+        // Create retreat button
+        this.uiStateManager.createRetreatButton(
+            this.battle,
+            this.state,
+            () => {
+                // Disable interactions when retreat is initiated
+                this.spiritManager.disableInteractions();
+                this.uiStateManager.destroyAbilityIcons();
+                this.spiritManager.cleanupSpirits();
+            }
+        );
+
         this.initialized = true;
     }
 

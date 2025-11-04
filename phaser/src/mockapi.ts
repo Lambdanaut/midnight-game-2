@@ -5,10 +5,10 @@
  * This is helpful for development of the frontend without the latency that the on-chain API has.
  */
 import { ContractAddress } from "@midnight-ntwrk/ledger";
-import { DeployedGame2API, Game2DerivedState, safeJSONString } from "game2-api";
-import { Ability, BattleConfig, BattleRewards, EFFECT_TYPE, BOSS_TYPE, Level, EnemiesConfig, PlayerLoadout, pureCircuits } from "game2-contract";
-import { Observable, Subscriber, Subject, BehaviorSubject } from "rxjs";
-import { combat_round_logic, initBattlestate, randomAbility } from "./battle/logic";
+import { DeployedGame2API, Game2DerivedState } from "game2-api";
+import { Ability, BattleConfig, BattleRewards, BOSS_TYPE, Level, EnemiesConfig, PlayerLoadout, pureCircuits } from "game2-contract";
+import { Observable, BehaviorSubject } from "rxjs";
+import { combat_round_logic, initBattlestate } from "./battle/logic";
 import { logger } from "./main";
 import { randomBytes } from "game2-api/dist/utils";
 
@@ -145,6 +145,25 @@ export class MockGame2API implements DeployedGame2API {
                 }
                 return ret;
             });
+        });
+    }
+
+    public retreat_from_battle(battle_id: bigint): Promise<void> {
+        return this.response(async () => {
+            const battleConfig = this.mockState.activeBattleConfigs.get(battle_id);
+            if (!battleConfig) {
+                throw new Error("Battle not found");
+            }
+
+            // Return loadout abilities to player
+            for (const ability_id of battleConfig.loadout.abilities) {
+                const count = this.mockState.playerAbilities.get(ability_id) ?? BigInt(0);
+                this.mockState.playerAbilities.set(ability_id, count + BigInt(1));
+            }
+
+            // Remove battle config and state
+            this.mockState.activeBattleConfigs.delete(battle_id);
+            this.mockState.activeBattleStates.delete(battle_id);
         });
     }
 
